@@ -12,9 +12,9 @@ typedef struct n node;
 
 void show(node * r){
 	
-	while(r!=NULL){ // r == null olana kadar devam et
-		printf("%d\n",r->data);// girilen parametrenin degeri
-		r=r->next;//r nin nextinin degeri r ye atanır.
+	while(r!=NULL){ 
+		printf("%d\n",r->data);
+		r=r->next;
 	}
 }
 node * insert(node * r,int x){
