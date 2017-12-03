@@ -1,71 +1,53 @@
-#include<iostream>
-#include <string.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/types.h>
+#include <time.h> 
+#include<iostream>
+#define PORT 5000
+int main(int argc, char *argv[])
+{
+    int listenfd = 0, connfd = 0,valread;
+    struct sockaddr_in serv_addr; 
+    char buffer[1024] = {0};
+    char sendBuff[1025];
+    time_t ticks; 
 
+    listenfd = socket(AF_INET, SOCK_STREAM, 0);
+    memset(&serv_addr, '0', sizeof(serv_addr));
+    memset(sendBuff, '0', sizeof(sendBuff)); 
 
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serv_addr.sin_port = htons(PORT); 
 
+    bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)); 
 
-
-#define PORT 1000
-#define BACKLOG 10
-
-int main(){
-    int client,server;
-    bool is_exist = false;
-    int buffer_size = 1024;
-    char *message;
-
-
-    struct sockaddr_in server_addr;
-    socklen_t size;
-
-    //init socket
-    client = socket(AF_INET,SOCK_STREAM,0);
-
-    if(client < 0 ){
-        std::cout << "Error to create socket object \n"; 
-    }else{
-        std::cout << "Socket Object Created ! \n";
+    listen(listenfd, 10); 
+    if ((connfd = accept(listenfd, (struct sockaddr*)NULL, NULL) )<0)
+    {
+        perror("accept");
+        exit(EXIT_FAILURE);
     }
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htons(INADDR_ANY); //network byte converting.
-    server_addr.sin_port = htons(PORT);//network byte converting.
 
-
-    if( bind( client ,  (struct sockaddr*)&server_addr  ,sizeof(server_addr) ) <0 )  {
-        std::cout << "Server  is binding \n ";
+    while(connfd > 0){
+        listen(listenfd, 10); 
+        if ((connfd = accept(listenfd, (struct sockaddr*)NULL, NULL) )<0)
+        {
+            perror("accept");
+            exit(EXIT_FAILURE);
+            
+            
+        }else{
+            valread = read( connfd , buffer, 1024);
+            std::cout<<buffer ;
+        }
+       
     }
-    else{
-        std::cout << "Server cannot binding \n ";
-    }
-    //bind controlling 
-
-    size = sizeof(server_addr);
-
-    listen(client,1);
-
-    server = accept(client,(struct sockaddr*)&server_addr,&size);
-    if(server < 0 ){
-        std::cout <<"Error cannot serving ."; 
-
-
-    }else{
-        std::cout <<"Serving"; 
-
-    }
-    while (server > 0){
-        strcpy(message,"Server Connected \n");
-        send(server,message,buffer_size,0);
-        std::cout << "Connected with client "<<client;
-        do {
-            recv(server,message,buffer_size,0);
-
-
-        }while(message == "e");
-    }
+     
 }
