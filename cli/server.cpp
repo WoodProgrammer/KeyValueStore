@@ -1,53 +1,70 @@
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <sys/types.h>
-#include <time.h> 
+#include<stdio.h>
+#include<string.h>    
+#include<sys/socket.h>
+#include<arpa/inet.h> 
+#include<unistd.h>    
 #include<iostream>
-#define PORT 5000
-int main(int argc, char *argv[])
+#define PORT 9092
+int main(int argc , char *argv[])
 {
-    int listenfd = 0, connfd = 0,valread;
-    struct sockaddr_in serv_addr; 
-    char buffer[1024] = {0};
-    char sendBuff[1025];
-    time_t ticks; 
+    int sockd , client_sock , c , read_size;
+    struct sockaddr_in server , client;
+    char *command;
 
-    listenfd = socket(AF_INET, SOCK_STREAM, 0);
-    memset(&serv_addr, '0', sizeof(serv_addr));
-    memset(sendBuff, '0', sizeof(sendBuff)); 
-
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serv_addr.sin_port = htons(PORT); 
-
-    bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)); 
-
-    listen(listenfd, 10); 
-    if ((connfd = accept(listenfd, (struct sockaddr*)NULL, NULL) )<0)
+    sockd = socket(AF_INET , SOCK_STREAM , 0);
+    if (sockd == -1)
     {
-        perror("accept");
-        exit(EXIT_FAILURE);
+        printf("Socket Creation Error . ! ");
     }
+    puts("Socket object created");
+     
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = INADDR_ANY;
+    server.sin_port = htons( PORT );
+     
+    //Bind
+    if( bind(sockd,(struct sockaddr *)&server , sizeof(server)) < 0)
+    {
+        perror("BIND failed. Errror");
+        return 1;
+    }
+    puts("bind done");
+     
+    //Listen
+    listen(sockd , 3);
+     
+    puts("KeyValue Store v1.0 is waiting  for connection    . ");
+    c = sizeof(struct sockaddr_in);
+     
+    client_sock = accept(sockd, (struct sockaddr *)&client, (socklen_t*)&c);
+    if (client_sock < 0)
+    {
+        perror("accept failed");
+        return 1;
+    }
+    puts("Connection accepted");
+     
+    while( (read_size = recv(client_sock , command , 2000 , 0)) > 0 )
+    {
+        if(*command == 'get'){
+            write( client_sock , "GET_METHOD" , 1000); //hash table get method
 
-    while(connfd > 0){
-        listen(listenfd, 10); 
-        if ((connfd = accept(listenfd, (struct sockaddr*)NULL, NULL) )<0)
-        {
-            perror("accept");
-            exit(EXIT_FAILURE);
-            
-            
-        }else{
-            valread = read( connfd , buffer, 1024);
-            std::cout<<buffer ;
         }
-       
+
+
+        write(client_sock , "METHOD_EXCEPTION_MESSAGE" , strlen(command));
     }
      
+    if(read_size == 0)
+    {
+        puts("Client disconnected");
+        fflush(stdout);
+
+    }
+    else if(read_size == -1)
+    {
+        perror("recv failed");
+    }
+     
+    return 0;
 }
